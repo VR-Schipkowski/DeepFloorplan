@@ -3,3 +3,6 @@ lib/
 bin/
 lib64/
 lib64
+annotations/
+pretrained/
+r3d.tfrecords
