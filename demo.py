@@ -5,6 +5,10 @@ import numpy as np
 import tensorflow as tf
 import imageio.v2 as imageio
 from PIL import Image
+from matplotlib.patches import Patch
+
+
+from preprocess import makeImageBetter
 
 os.environ['CUDA_VISIBLE_DEVICES'] = '0'
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
@@ -12,15 +16,15 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 # input image path
 parser = argparse.ArgumentParser()
 
-parser.add_argument('--im_path', type=str, default='demo/47541863.jpg',
+parser.add_argument('--im_path', type=str, default='demo/45719584.jpg',
                     help='input image paths.')
 
 # color map
 floorplan_map = {
     0: [255, 255, 255],  # background
     1: [192, 192, 224],  # closet
-    2: [192, 255, 255],  # batchroom/washroom
-    3: [224, 255, 192],  # livingroom/kitchen/dining room
+    2: [192, 255, 255],  # bathroom/washroom
+    3: [224, 255, 192],  # living_room/kitchen/dining room
     4: [255, 224, 128],  # bedroom
     5: [255, 160, 96],  # hall
     6: [255, 224, 224],  # balcony
@@ -28,6 +32,20 @@ floorplan_map = {
     8: [255, 255, 255],  # not used
     9: [255, 60, 128],  # door & window
     10: [0, 0, 0]  # wall
+}
+
+floorplan_legend = {
+    'background': [255, 255, 255],
+    'closet': [192, 192, 224],
+    'bathroom/washroom': [192, 255, 255],
+    'living_room/kitchen/dining room': [224, 255, 192],
+    'bedroom': [255, 224, 128],
+    'hall': [255, 160, 96],
+    'balcony': [255, 224, 224],
+    'not used 1': [255, 255, 255],
+    'not used 2': [255, 255, 255],
+    'door & window': [255, 60, 128],
+    'wall': [0, 0, 0]
 }
 
 
@@ -43,6 +61,7 @@ def main(args):
     im = imageio.imread(args.im_path, pilmode='RGB')
     plt.imshow(im)
     plt.show()
+    im = makeImageBetter(im)
     im = im.astype(np.float32) / 255.0  # Normalize to [0, 1]
     im = np.array(Image.fromarray(
         (im * 255).astype(np.uint8)).resize((512, 512))) / 255.0
@@ -85,6 +104,12 @@ def main(args):
         plt.imshow(im)
         plt.subplot(122)
         plt.imshow(floorplan_rgb / 255.0)  # Normalize to [0, 1] for display
+
+        legend_handles = [Patch(color=np.array(color) / 255.0, label=label)
+                          for label, color in floorplan_legend.items()]
+        plt.legend(handles=legend_handles, bbox_to_anchor=(
+            1.05, 1), loc='upper left', borderaxespad=0.)
+
         plt.show()
 
 
