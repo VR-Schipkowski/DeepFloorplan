@@ -3,71 +3,44 @@ from matplotlib import pyplot as plt
 import imageio.v2 as imageio
 import numpy as np
 import argparse
+import cv2
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--im_path', type=str, default='demo/Floorplan_1stFloor3.png',
+parser.add_argument('--im_path', type=str, default='demo/Floorplan_1stFloor.png',
                     help='input image paths.')
 
 
-def makeImageBetter(image):
-    # Convert to PIL Image
-    im_pil = Image.fromarray(image)
+def preprocessing(image, noise_removal_threshold=200):
+    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    blur = cv2.GaussianBlur(gray, (3, 3), 0)
 
-    plt.imshow(im_pil)
-    plt.show()
+    # Apply adaptive thresholding
+    _, binary = cv2.threshold(
+        blur, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
 
-    # Convert to grayscale
-    im_gray = im_pil.convert('L')
+    # Filter using contour area and remove small noise
+    cnts = cv2.findContours(binary, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+    cnts = cnts[0] if len(cnts) == 2 else cnts[1]
+    for c in cnts:
+        area = cv2.contourArea(c)
+        if area < 10000:
+            cv2.drawContours(binary, [c], -1, (0, 0, 0), -1)
+    # Morph close and invert image
+    kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (5, 5))
+    close = 255 - cv2.morphologyEx(binary,
+                                   cv2.MORPH_CLOSE, kernel, iterations=2)
 
-    plt.imshow(im_gray, cmap='gray')
-    plt.show()
+    return image, close
 
-    # Increase contrast
-    enhancer = ImageEnhance.Contrast(im_gray)
-    im_contrast = enhancer.enhance(1.5)
 
-    plt.imshow(im_contrast, cmap='gray')
-    plt.show()
+def makeImageBetter(img, noise_removal_threshold=200):
+    img, processed_image = preprocessing(img, noise_removal_threshold)
+    # Convert the processed image to RGB
+    processed_image_rgb = cv2.cvtColor(processed_image, cv2.COLOR_GRAY2RGB)
+    # Ensure the processed image has the same type and format as the input image
+    processed_image_rgb = processed_image_rgb.astype(np.uint8)
 
-    # Reduce noise
-    im_denoised = im_contrast.filter(ImageFilter.MedianFilter(size=3))
-
-    # Edge detection
-    im_edges = im_denoised.filter(ImageFilter.FIND_EDGES)
-
-   # Apply threshold to create a binary image
-    threshold = 125
-    im_binary = im_edges.point(lambda p: p > threshold and 255)
-
-    # Invert the binary image
-    im_binary = ImageOps.invert(im_binary)
-
-    # Create an alpha mask from the binary image
-    im_alpha = im_contrast.convert('L')
-
-    # Convert the edge-detected image to RGB
-    im_edges_rgb = im_edges.convert('RGB')
-
-    # Create a transparent image
-    im_transparent = Image.new('RGBA', im_pil.size, (0, 0, 0, 0))
-
-    # Blend the edge-detected image with the original image using the alpha mask
-    im_overlay = Image.composite(im_edges_rgb, im_transparent, im_alpha)
-
-    # Use morphological operations to enhance features
-    im_morph = im_overlay.filter(ImageFilter.MaxFilter(3))
-
-    im_morph = im_morph.filter(ImageFilter.MinFilter(3))
-    # Convert back to NumPy array
-    im_better = np.array(im_contrast)
-
-    # Ensure the image has 3 channels
-    if im_better.ndim == 2:
-        im_better = np.stack((im_better,) * 3, axis=-1)
-    elif im_better.shape[2] == 1:
-        im_better = np.concatenate([im_better] * 3, axis=-1)
-
-    return im_better
+    return processed_image_rgb
 
 
 def main(args):
