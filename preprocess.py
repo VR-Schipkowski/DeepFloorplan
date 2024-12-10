@@ -47,30 +47,15 @@ def main(args):
     image = imageio.imread(args.im_path)
     image_better = makeImageBetter(image)
 
-    plt.figure(figsize=(12, 6))
-
     # Plot original image and its histogram
-    plt.subplot(221)
+    plt.subplot(121)
     plt.title('Original Image')
     plt.imshow(image)
 
-    plt.subplot(222)
-    plt.title('Histogram of Original Image')
-    plt.hist(image.ravel(), bins=256, color='black', alpha=0.7)
-    plt.xlabel('Pixel Value')
-    plt.ylabel('Frequency')
-
     # Plot enhanced image and its histogram
-    plt.subplot(223)
+    plt.subplot(122)
     plt.title('Enhanced Image')
     plt.imshow(image_better)
-
-    plt.subplot(224)
-    plt.title('Histogram of Enhanced Image')
-    plt.hist(image_better.ravel(), bins=256, color='black', alpha=0.7)
-    plt.xlabel('Pixel Value')
-    plt.ylabel('Frequency')
-
     plt.tight_layout()
     plt.show()
 
