@@ -16,7 +16,7 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 # input image path
 parser = argparse.ArgumentParser()
 
-parser.add_argument('--im_path', type=str, default='demo/Floorplan_1stFloor.png',
+parser.add_argument('--im_path', type=str, default='demo/45719584.jpg',
                     help='input image paths.')
 
 # color map
@@ -61,7 +61,7 @@ def main(args):
     im = imageio.imread(args.im_path, pilmode='RGB')
     plt.imshow(im)
     plt.show()
-    im = makeImageBetter(im, 50)
+    im = makeImageBetter(im, 20)
     plt.imshow(im)
     plt.show()
     im = im.astype(np.float32) / 255.0  # Normalize to [0, 1]
